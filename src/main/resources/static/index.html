@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .file-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .file-list li {
+            margin: 10px 0;
+        }
+        .file-list a {
+            text-decoration: none;
+            color: #007bff;
+            cursor: pointer;
+        }
+        .file-list a:hover {
+            text-decoration: underline;
+        }
+        .upload-container {
+            margin-bottom: 20px;
+        }
+        .upload-container input {
+            margin-right: 10px;
+        }
+        .upload-container button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+<h1>Available Files</h1>
+
+<!-- File Upload Section -->
+<div class="upload-container">
+    <input type="file" id="fileInput">
+    <button id="uploadButton" onclick="uploadFile()">Upload</button>
+</div>
+
+<ul class="file-list" id="fileList">
+    <!-- Files will be dynamically added here -->
+</ul>
+
+<script>
+    // Fetch the list of files from the backend
+    async function fetchFiles() {
+        try {
+            const response = await fetch('/api/files');
+            const files = await response.json();
+
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = ''; // Clear existing list
+
+            files.forEach(file => {
+                const listItem = document.createElement('li');
+                const link = document.createElement('a');
+                link.href = "#"; // Prevent direct navigation
+                link.textContent = file.name;
+                link.onclick = function(event) {
+                    event.preventDefault(); // Prevent default navigation
+                    confirmDownload(file.id, file.name);
+                };
+                listItem.appendChild(link);
+                fileList.appendChild(listItem);
+            });
+        } catch (error) {
+            console.error('Error fetching files:', error);
+        }
+    }
+
+    // Function to confirm and start download
+    function confirmDownload(fileId, fileName) {
+        const confirmAction = confirm(`Do you want to download "${fileName}"?`);
+        if (confirmAction) {
+            window.location.href = `/api/files/download/${fileId}`;
+        }
+    }
+
+    // Function to upload a file
+    async function uploadFile() {
+        const fileInput = document.getElementById('fileInput');
+        const uploadButton = document.getElementById('uploadButton');
+        const file = fileInput.files[0];
+
+        if (!file) {
+            alert('Please select a file to upload.');
+            return;
+        }
+
+        // Disable the upload button to prevent multiple uploads
+        uploadButton.disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/files/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                alert('File uploaded successfully!');
+                fileInput.value = ''; // Clear the file input field
+                fetchFiles(); // Refresh file list
+            } else {
+                alert('Failed to upload file.');
+            }
+        } catch (error) {
+            console.error('Error uploading file:', error);
+            alert('Error uploading file.');
+        } finally {
+            // Enable the upload button after processing is complete
+            uploadButton.disabled = false;
+        }
+    }
+
+    // Fetch files when the page loads
+    window.onload = fetchFiles;
+</script>
+</body>
+</html>
