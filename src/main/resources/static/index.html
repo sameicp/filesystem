@@ -1,126 +1,360 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>File List</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>File Manager</title>
     <style>
+        :root {
+          --primary-color: #2563eb;
+          --danger-color: #dc2626;
+          --background-color: #f3f4f6;
+          --card-background: #ffffff;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          margin: 0;
+          padding: 2rem;
+          background-color: var(--background-color);
         }
-        .file-list {
-            list-style-type: none;
-            padding: 0;
+
+        .container {
+          max-width: 800px;
+          margin: 0 auto;
         }
-        .file-list li {
-            margin: 10px 0;
+
+        .header {
+          text-align: center;
+          margin-bottom: 2rem;
         }
-        .file-list a {
-            text-decoration: none;
-            color: #007bff;
-            cursor: pointer;
+
+        h1 {
+          color: #1f2937;
+          font-size: 2.5rem;
+          margin-bottom: 1rem;
         }
-        .file-list a:hover {
-            text-decoration: underline;
-        }
+
         .upload-container {
-            margin-bottom: 20px;
+          background: var(--card-background);
+          padding: 2rem;
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          margin-bottom: 2rem;
+          display: flex;
+          gap: 1rem;
+          align-items: center;
         }
-        .upload-container input {
-            margin-right: 10px;
+
+        .file-input-wrapper {
+          flex-grow: 1;
+          position: relative;
+          overflow: hidden;
         }
-        .upload-container button:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
+
+        .file-input-wrapper input[type="file"] {
+          font-size: 1rem;
+          position: absolute;
+          left: 0;
+          top: 0;
+          opacity: 0;
+          width: 100%;
+          height: 100%;
+          cursor: pointer;
+        }
+
+        .custom-file-input {
+          display: inline-block;
+          padding: 0.75rem 1.5rem;
+          background: #e5e7eb;
+          border-radius: 8px;
+          color: #4b5563;
+          cursor: pointer;
+          transition: background-color 0.2s;
+        }
+
+        .custom-file-input:hover {
+          background: #d1d5db;
+        }
+
+        .selected-file-name {
+          font-size: 0.9rem;
+          color: #4b5563;
+          margin-left: 1rem;
+        }
+
+        .upload-button {
+          background-color: var(--primary-color);
+          color: white;
+          border: none;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: background-color 0.2s;
+        }
+
+        .upload-button:disabled {
+          background-color: #93c5fd;
+          cursor: not-allowed;
+        }
+
+        .file-list {
+          background: var(--card-background);
+          border-radius: 12px;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          padding: 1.5rem;
+        }
+
+        .file-list ul {
+          list-style-type: none;
+          padding: 0;
+          margin: 0;
+        }
+
+        .file-item {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          margin-bottom: 0.5rem;
+          background: #f9fafb;
+          border: 1px solid #e5e7eb;
+          border-radius: 8px;
+          transition: background-color 0.2s, box-shadow 0.2s;
+        }
+
+        .file-item:hover {
+          background-color: #f1f5f9;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .file-name {
+          color: #1f2937;
+          font-weight: 500;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 300px;
+        }
+
+        .file-buttons {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .download-button,
+        .delete-button {
+          background-color: var(--primary-color);
+          color: white;
+          border: none;
+          padding: 0.5rem 1rem;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 500;
+          transition: background-color 0.2s;
+        }
+
+        .download-button {
+          background-color: #059669;
+        }
+
+        .download-button:hover {
+          background-color: #047857;
+        }
+
+        .delete-button {
+          background-color: var(--danger-color);
+        }
+
+        .delete-button:hover {
+          background-color: #b91c1c;
+        }
+
+        .status-message {
+          position: fixed;
+          bottom: 2rem;
+          right: 2rem;
+          padding: 1rem 2rem;
+          border-radius: 8px;
+          background: var(--card-background);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+          display: none;
+        }
+
+        .success {
+          background: #059669;
+          color: white;
+        }
+
+        .error {
+          background: #dc2626;
+          color: white;
         }
     </style>
 </head>
 <body>
-<h1>Available Files</h1>
+<div class="container">
+    <div class="header">
+        <h1>📁 File Manager</h1>
+    </div>
 
-<!-- File Upload Section -->
-<div class="upload-container">
-    <input type="file" id="fileInput">
-    <button id="uploadButton" onclick="uploadFile()">Upload</button>
+    <!-- Upload Section -->
+    <div class="upload-container">
+        <div class="file-input-wrapper">
+            <input type="file" id="fileInput">
+            <span class="custom-file-input">Choose File</span>
+        </div>
+        <span id="selectedFileName" class="selected-file-name">No file chosen</span>
+        <button id="uploadButton" class="upload-button" onclick="uploadFile()">
+            Upload File
+        </button>
+    </div>
+
+    <!-- File List -->
+    <div class="file-list">
+        <ul id="fileList">
+            <!-- Files will be dynamically added here -->
+        </ul>
+    </div>
+
+    <!-- Status Message -->
+    <div id="statusMessage" class="status-message"></div>
 </div>
 
-<ul class="file-list" id="fileList">
-    <!-- Files will be dynamically added here -->
-</ul>
-
 <script>
-    // Fetch the list of files from the backend
-    async function fetchFiles() {
-        try {
-            const response = await fetch('/api/files');
-            const files = await response.json();
+    // Display selected file name
+    document.getElementById('fileInput').addEventListener('change', function() {
+      const selectedFileName = document.getElementById('selectedFileName');
+      if (this.files && this.files.length > 0) {
+        selectedFileName.textContent = this.files[0].name;
+      } else {
+        selectedFileName.textContent = 'No file chosen';
+      }
+    });
 
-            const fileList = document.getElementById('fileList');
-            fileList.innerHTML = ''; // Clear existing list
-
-            files.forEach(file => {
-                const listItem = document.createElement('li');
-                const link = document.createElement('a');
-                link.href = "#"; // Prevent direct navigation
-                link.textContent = file.name;
-                link.onclick = function(event) {
-                    event.preventDefault(); // Prevent default navigation
-                    confirmDownload(file.id, file.name);
-                };
-                listItem.appendChild(link);
-                fileList.appendChild(listItem);
-            });
-        } catch (error) {
-            console.error('Error fetching files:', error);
-        }
+    // Helper function to trim file names to a maximum length
+    function trimText(text, maxLength) {
+      return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
     }
 
-    // Function to confirm and start download
-    function confirmDownload(fileId, fileName) {
-        const confirmAction = confirm(`Do you want to download "${fileName}"?`);
-        if (confirmAction) {
-            window.location.href = `/api/files/download/${fileId}`;
+    // Fetch the list of files from the backend
+    async function fetchFiles() {
+      try {
+        const response = await fetch('/api/files');
+        const files = await response.json();
+
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = ''; // Clear existing list
+
+        const maxLength = 20; // Maximum length for file names
+
+        files.forEach(file => {
+          const listItem = document.createElement('li');
+          listItem.className = 'file-item';
+
+          // Create a span to display the trimmed file name
+          const nameSpan = document.createElement('span');
+          nameSpan.className = 'file-name';
+          nameSpan.textContent = trimText(file.name, maxLength);
+
+          // Create a container for buttons
+          const buttonContainer = document.createElement('div');
+          buttonContainer.className = 'file-buttons';
+
+          // Download button
+          const downloadButton = document.createElement('button');
+          downloadButton.className = 'download-button';
+          downloadButton.textContent = 'Download';
+          downloadButton.onclick = function() {
+            // Directly download file without confirmation
+            window.location.href = `/api/files/download/${file.id}`;
+          };
+
+          // Delete button
+          const deleteButton = document.createElement('button');
+          deleteButton.className = 'delete-button';
+          deleteButton.textContent = 'Delete';
+          deleteButton.onclick = function() {
+            confirmDelete(file.id, file.name);
+          };
+
+          // Append buttons to container
+          buttonContainer.appendChild(downloadButton);
+          buttonContainer.appendChild(deleteButton);
+
+          // Assemble list item
+          listItem.appendChild(nameSpan);
+          listItem.appendChild(buttonContainer);
+
+          // Append list item to file list
+          fileList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error('Error fetching files:', error);
+      }
+    }
+
+    // Function to confirm and delete a file
+    async function confirmDelete(fileId, fileName) {
+      const confirmAction = confirm(`Are you sure you want to delete "${fileName}"?`);
+      if (confirmAction) {
+        try {
+          const response = await fetch(`/api/files/${fileId}`, {
+            method: 'DELETE'
+          });
+
+          if (response.ok) {
+            alert('File deleted successfully!');
+            fetchFiles(); // Refresh file list
+          } else {
+            alert('Failed to delete file.');
+          }
+        } catch (error) {
+          console.error('Error deleting file:', error);
+          alert('Error deleting file.');
         }
+      }
     }
 
     // Function to upload a file
     async function uploadFile() {
-        const fileInput = document.getElementById('fileInput');
-        const uploadButton = document.getElementById('uploadButton');
-        const file = fileInput.files[0];
+      const fileInput = document.getElementById('fileInput');
+      const uploadButton = document.getElementById('uploadButton');
+      const file = fileInput.files[0];
 
-        if (!file) {
-            alert('Please select a file to upload.');
-            return;
+      if (!file) {
+        alert('Please select a file to upload.');
+        return;
+      }
+
+      // Disable the upload button to prevent multiple uploads
+      uploadButton.disabled = true;
+
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch('/api/files/upload', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (response.ok) {
+          alert('File uploaded successfully!');
+          fileInput.value = ''; // Clear the file input field
+          document.getElementById('selectedFileName').textContent = 'No file chosen';
+          fetchFiles(); // Refresh file list
+        } else {
+          alert('Failed to upload file.');
         }
-
-        // Disable the upload button to prevent multiple uploads
-        uploadButton.disabled = true;
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const response = await fetch('/api/files/upload', {
-                method: 'POST',
-                body: formData
-            });
-
-            if (response.ok) {
-                alert('File uploaded successfully!');
-                fileInput.value = ''; // Clear the file input field
-                fetchFiles(); // Refresh file list
-            } else {
-                alert('Failed to upload file.');
-            }
-        } catch (error) {
-            console.error('Error uploading file:', error);
-            alert('Error uploading file.');
-        } finally {
-            // Enable the upload button after processing is complete
-            uploadButton.disabled = false;
-        }
+      } catch (error) {
+        console.error('Error uploading file:', error);
+        alert('Error uploading file.');
+      } finally {
+        // Enable the upload button after processing is complete
+        uploadButton.disabled = false;
+      }
     }
 
     // Fetch files when the page loads

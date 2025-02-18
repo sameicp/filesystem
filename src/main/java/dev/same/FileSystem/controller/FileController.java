@@ -3,6 +3,7 @@ package dev.same.FileSystem.controller;
 import dev.same.FileSystem.model.FileEntity;
 import dev.same.FileSystem.service.FileService;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,22 +28,14 @@ public class FileController {
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file")MultipartFile file) {
-        try {
-            fileService.uploadFile(file);
-            return ResponseEntity.ok("File uploaded successfully");
-        } catch (IOException e) {
-            return ResponseEntity.status(500).body("failed to upload file... " + e.getMessage());
-        }
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    void uploadFile(@RequestParam("file")MultipartFile file) {
+        fileService.uploadFile(file);
     }
 
     @GetMapping("/download/{id}")
-    public ResponseEntity<byte[]> donwloadFile(@PathVariable int id) {
+    ResponseEntity<byte[]> downloadFile(@PathVariable int id) {
         FileEntity fileEntity = fileService.downloadFile(id);
-
-        if (fileEntity == null) {
-            return ResponseEntity.status(404).body(null);
-        }
 
         // set http headers for the response
         HttpHeaders httpHeaders = new HttpHeaders();
@@ -52,5 +45,12 @@ public class FileController {
 
         // return file data
         return ResponseEntity.ok().headers(httpHeaders).body(fileEntity.getData());
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.OK)
+    String deleteFileById(@PathVariable Long id) {
+        fileService.deleteFileById(id);
+        return "File deleted successful";
     }
 }
